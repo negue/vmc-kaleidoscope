@@ -1,5 +1,8 @@
 package osc
 
+// copied the basic UPD Message Parsing from github.com/hypebeast/go-osc
+// since the full package was to slow (and to demanding on the CPU/ram)
+
 import (
 	"bufio"
 	"encoding/binary"

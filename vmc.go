@@ -13,7 +13,6 @@ import (
 	osc "just-do-it/osc"
 )
 
-
 // Go Cons:
 // - no string concat template way
 // - weird fixed array variable declarion syntax  var myArray[4]int
@@ -24,10 +23,12 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	/*	fmt.Println(
-		StringConcat("My favorite number is", strconv.Itoa(
-			add(rand.Intn(10), secondNum))))
-	*/
+	config, err := ReadConfig()
+
+	if err != nil {
+		fmt.Printf("Some error %v", err)
+		return
+	}
 
 	connClient, err := net.Dial("udp", "127.0.0.1:39544")
 	if err != nil {
@@ -36,7 +37,7 @@ func main() {
 	}
 
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
-		Port: 39543,
+		Port: int(config.ListenTo),
 		IP:   net.ParseIP("0.0.0.0"),
 	})
 	if err != nil {
@@ -65,6 +66,12 @@ func main() {
 
 		if oscMessage.CountArguments() > 0 {
 
+			bodypart, ok := oscMessage.Arguments[0].(string)
+
+			if !ok {
+				bodypart = "UNKNOWN of "+oscMessage.Address
+			}
+
 			posArray := osc.ReadFloatArguments(oscMessage, 1, 3)
 
 			if len(posArray) == 3 {
@@ -74,7 +81,7 @@ func main() {
 					posArray[2],
 				)
 
-				fmt.Println("%s", pos)
+				fmt.Println(bodypart, pos)
 			}
 		}
 	}
