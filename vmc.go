@@ -6,11 +6,16 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"os"
 	"time"
 
+	"github.com/ungerik/go3d/fmath"
 	go3dquat "github.com/ungerik/go3d/quaternion"
 	vec3 "github.com/ungerik/go3d/vec3"
 	vec4 "github.com/ungerik/go3d/vec4"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	// "slices"
 	"strings"
@@ -31,12 +36,12 @@ var rotationCheckBodyPartList []string = []string{
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
+	initilizeStuff()
 
 	config, err := ReadConfig()
 
 	if err != nil {
-		fmt.Printf("Some error %v", err)
+		log.Err(err).Msg("Some error")
 		return
 	}
 
@@ -45,11 +50,12 @@ func main() {
 		IP:   net.ParseIP("0.0.0.0"),
 	})
 	if err != nil {
-		panic(err)
+		log.Err(err).Msg("Cant listen to UDP Port")
+		return
 	}
 
 	defer conn.Close()
-	fmt.Printf("server listening %s\n", conn.LocalAddr().String())
+	log.Info().Msgf("server listening %s", conn.LocalAddr().String())
 
 	otherConnections, err := connectToOtherNodes(config)
 
@@ -71,6 +77,17 @@ func main() {
 	}
 }
 
+func initilizeStuff() {
+	rand.Seed(time.Now().UnixNano())
+
+	logFile, _ := os.OpenFile("./osc.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+
+	w := zerolog.MultiLevelWriter(logFile, zerolog.ConsoleWriter{Out: os.Stdout})
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	log.Logger = log.Output(w)
+}
+
 func connectToOtherNodes(config *Config) ([]net.Conn, error) {
 	amountOfOtherConnections := len(config.ReflectTo)
 
@@ -79,11 +96,10 @@ func connectToOtherNodes(config *Config) ([]net.Conn, error) {
 	for i := 0; i < amountOfOtherConnections; i++ {
 		connClient, err := net.Dial("udp", config.ReflectTo[i])
 		if err != nil {
-			fmt.Printf("Some error %v", err)
 			return nil, err
 		}
 
-		fmt.Println("Sending Messages to " + config.ReflectTo[i])
+		log.Info().Msgf("Sending Messages to " + config.ReflectTo[i])
 
 		otherConnections[i] = connClient
 	}
@@ -140,7 +156,7 @@ func filterAndSendToOthers(connections []net.Conn, data []byte) {
 
 			quatEulerVec3 := vec3.T{quatEulerX, quatEulerY, quatEulerZ}
 
-			fmt.Printf("received: %s - %s - %v\n", oscMessage.Address, bodypart, quatEulerVec3)
+			// fmt.Printf("received: %s - %s - %v\n", oscMessage.Address, bodypart, quatEulerVec3)
 
 			lastRotation := lastRotationOfPart[bodypart]
 
@@ -149,13 +165,40 @@ func filterAndSendToOthers(connections []net.Conn, data []byte) {
 				if lastRotation[0] == quatEulerX &&
 					lastRotation[1] == quatEulerY &&
 					lastRotation[2] == quatEulerZ {
-					fmt.Printf("ITS THE SAME!!!: %v\n", bodypart)
+					// fmt.Printf("ITS THE SAME!!!: %v\n", bodypart)
 
 					return
 				}
 
-				fmt.Printf("lastPos: %s - %v\n", bodypart, lastRotation)
+				// fmt.Printf("lastPos: %s - %v\n", bodypart, lastRotation)
 
+				diffX := fmath.Abs(lastRotation[0] - quatEulerX)
+				diffY := fmath.Abs(lastRotation[1] - quatEulerY)
+				diffZ := fmath.Abs(lastRotation[2] - quatEulerZ)
+
+				maxChange := fmath.Max(diffX, fmath.Max(diffY, diffZ))
+
+				if maxChange > 0.04 {
+					log.Info().
+						Dict("lastPos", zerolog.Dict().
+							Float32("X", lastRotation[0]).
+							Float32("Y", lastRotation[1]).
+							Float32("Z", lastRotation[2]),
+						).
+						Dict("newPos", zerolog.Dict().
+							Float32("X", quatEulerX).
+							Float32("Y", quatEulerY).
+							Float32("Z", quatEulerZ),
+						).
+						Dict("diff", zerolog.Dict().
+							Float32("max", maxChange).
+							Float32("X", diffX).
+							Float32("Y", diffY).
+							Float32("Z", diffZ),
+						).Msg("Bodypart: " + bodypart)
+				}
+
+				sendToAll(connections, data)
 			}
 
 			lastRotationOfPart[bodypart] = quatEulerVec3
