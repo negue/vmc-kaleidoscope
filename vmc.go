@@ -4,10 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"math/rand"
 	"net"
-	"os"
-	"time"
 
 	"github.com/ungerik/go3d/fmath"
 	go3dquat "github.com/ungerik/go3d/quaternion"
@@ -75,17 +72,6 @@ func main() {
 
 		filterAndSendToOthers(otherConnections, clippedRawBytes)
 	}
-}
-
-func initilizeStuff() {
-	rand.Seed(time.Now().UnixNano())
-
-	logFile, _ := os.OpenFile("./osc.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-
-	w := zerolog.MultiLevelWriter(logFile, zerolog.ConsoleWriter{Out: os.Stdout})
-
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	log.Logger = log.Output(w)
 }
 
 func connectToOtherNodes(config *Config) ([]net.Conn, error) {
