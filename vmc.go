@@ -32,15 +32,20 @@ var rotationCheckBodyPartList []string = []string{
 	"LeftLowerArm", "RightLowerArm",
 }
 
+var config *Config
+
 func main() {
 	initilizeStuff()
 
-	config, err := ReadConfig()
+	_config, err := ReadConfig()
+	config = _config
 
 	if err != nil {
 		log.Err(err).Msg("Some error")
 		return
 	}
+
+	log.Info().Msgf("Logging the Differences of: %v", config.LogDiff)
 
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
 		Port: int(config.ListenTo),
@@ -164,7 +169,7 @@ func filterAndSendToOthers(connections []net.Conn, data []byte) {
 
 				maxChange := fmath.Max(diffX, fmath.Max(diffY, diffZ))
 
-				if maxChange > 0.04 {
+				if maxChange > config.LogDiff {
 					log.Info().
 						Dict("lastPos", zerolog.Dict().
 							Float32("X", lastRotation[0]).

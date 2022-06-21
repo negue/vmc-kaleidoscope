@@ -7,6 +7,7 @@ import (
 type Config struct {
 	ListenTo  uint16
 	ReflectTo []string
+	LogDiff   float32
 }
 
 // todo filter out bodypart movement based on XY and stuff like that
