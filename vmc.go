@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	// "slices"
+
 	"strings"
 
 	osc "just-do-it/osc"
@@ -36,6 +37,7 @@ var config *Config
 
 func main() {
 	initilizeStuff()
+	go startProfileKeyboardListener()
 
 	_config, err := ReadConfig()
 	config = _config
