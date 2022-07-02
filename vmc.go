@@ -35,7 +35,7 @@ func main() {
 		return
 	}
 
-	VmcListenerV1(otherConnections)
+	VmcListenerV2(otherConnections)
 }
 
 func connectToOtherNodes(config *Config) ([]net.Conn, error) {
