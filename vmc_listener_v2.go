@@ -161,3 +161,9 @@ func VmcListenerV2(connections []net.Conn) {
 		}
 	}
 }
+
+func sendToAll(connections []net.Conn, data []byte) {
+	for _, conn := range connections {
+		conn.Write(data)
+	}
+}
