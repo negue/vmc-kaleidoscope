@@ -60,7 +60,7 @@ func VmcListenerV2(connections []net.Conn) {
 		// Here we pass some extra filters, so we'll only fully parse
 		// the root and bone transform messages (for best possible performance).
 		message, err := vmc.ParseMessage(
-			buf,
+			filledBuffer,
 			// vmc.AddressRootTransform,
 			vmc.AddressBoneTransform,
 		)
