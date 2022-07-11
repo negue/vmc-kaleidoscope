@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -34,6 +35,10 @@ func main() {
 		}
 
 		n, _, err := conn.ReadFrom(dataBuf)
+		if errors.Is(err, os.ErrDeadlineExceeded) {
+			log.Printf("no data within the last 10 seconds, are we connected?")
+			continue
+		}
 		if err != nil {
 			log.Fatal("failed reading from UDP")
 		}
