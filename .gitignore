@@ -24,3 +24,6 @@ config.json
 
 # Go workspace file
 go.work
+
+# Dump files
+*.bin.gz
